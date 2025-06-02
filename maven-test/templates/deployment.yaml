@@ -44,11 +44,10 @@ spec:
             - |
               chmod -R 777 /mnt/results || true
               mkdir -p /app/target && chmod -R 777 /app/target || true
+          {{- with .Values.initVolumeMounts }}
           volumeMounts:
-            - name: results
-              mountPath: /mnt/results
-            - name: target
-              mountPath: /app/target
+            {{- toYaml . | nindent 6 }}
+          {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           {{- with .Values.securityContext }}

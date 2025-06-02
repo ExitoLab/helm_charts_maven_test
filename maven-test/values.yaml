@@ -120,11 +120,16 @@ volumes:
   - name: results
     persistentVolumeClaim:
       claimName: maven-results-pvc
+  - name: target
+    emptyDir: {}
 
 # Additional volumeMounts on the output Deployment definition.
 volumeMounts:
   - name: results
     mountPath: "/mnt/results"
+  - name: target
+    mountPath: "/app/target"
+
 
 nodeSelector: {}
 
