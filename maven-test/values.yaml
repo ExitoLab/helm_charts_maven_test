@@ -22,10 +22,13 @@ imagePullSecrets:
 nameOverride: ""
 fullnameOverride: ""
 
-serviceAccountName: jenkins-agents
 
 # Created service account from openshift with these permissions
+# oc create serviceaccount jenkins-agents -n jenkins-agents
 # oc adm policy add-scc-to-user anyuid -z jenkins-agents -n jenkins-agents
+
+serviceAccountName: jenkins-agents
+
 
 # This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
 serviceAccount:

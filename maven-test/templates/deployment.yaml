@@ -47,23 +47,48 @@ spec:
             - |
               HOSTNAME=$(hostname)
               echo "Running tests with suite: $HOSTNAME"
-
-              # Prepare Maven local repo directory inside the PVC
+              
+              # Prepare directories
               mkdir -p /mnt/results/.m2
-
-              # Run tests using custom Maven repo path
-              mvn clean install \
+              mkdir -p /mnt/results/$HOSTNAME
+              mkdir -p /app/target/surefire-reports
+              
+              # Set permissions to avoid clean issues
+              chmod -R 755 /app/target 2>/dev/null || true
+              
+              # Clean with error handling
+              mvn clean -Dmaven.clean.failOnError=false \
+                -Dmaven.repo.local=/mnt/results/.m2
+              
+              # Run tests
+              mvn test \
                 -Dmaven.repo.local=/mnt/results/.m2 \
                 -DsuiteXmlFile=testng-automation/testng-simple.xml \
                 -Dsurefire.reportsDirectory=/mnt/results/$HOSTNAME
-
+              
+              # Copy surefire reports to default location for report generation
+              if [ -d "/mnt/results/$HOSTNAME" ]; then
+                cp -r /mnt/results/$HOSTNAME/* /app/target/surefire-reports/ 2>/dev/null || true
+              fi
+              
               # Generate HTML reports
               mvn surefire-report:report-only \
                 -Dmaven.repo.local=/mnt/results/.m2 \
-                -Dsurefire.reportsDirectory=/mnt/results/$HOSTNAME \
-                -DoutputDirectory=/mnt/results/$HOSTNAME
-
+                -DoutputDirectory=/mnt/results/$HOSTNAME || {
+                echo "Report generation failed, but tests may have succeeded"
+                echo "Check test results in /mnt/results/$HOSTNAME"
+              }
+              
+              # Copy any generated site reports
+              if [ -d "/app/target/site" ]; then
+                cp -r /app/target/site/* /mnt/results/$HOSTNAME/ 2>/dev/null || true
+              fi
+              
               echo "Reports generated at /mnt/results/$HOSTNAME"
+              
+              # List final results
+              echo "Final results structure:"
+              ls -la /mnt/results/$HOSTNAME/ || echo "No results directory found"
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
@@ -88,4 +113,3 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-
