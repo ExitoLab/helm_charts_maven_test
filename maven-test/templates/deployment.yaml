@@ -47,13 +47,19 @@ spec:
             - |
               HOSTNAME=$(hostname)
               echo "Running tests with suite: $HOSTNAME"
-              # Run tests
+
+              # Prepare Maven local repo directory inside the PVC
+              mkdir -p /mnt/results/.m2
+
+              # Run tests using custom Maven repo path
               mvn clean install \
+                -Dmaven.repo.local=/mnt/results/.m2 \
                 -DsuiteXmlFile=testng-automation/testng-simple.xml \
                 -Dsurefire.reportsDirectory=/mnt/results/$HOSTNAME
 
-              # Generate HTML reports after test run
+              # Generate HTML reports
               mvn surefire-report:report-only \
+                -Dmaven.repo.local=/mnt/results/.m2 \
                 -Dsurefire.reportsDirectory=/mnt/results/$HOSTNAME \
                 -DoutputDirectory=/mnt/results/$HOSTNAME
 
