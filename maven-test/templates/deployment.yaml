@@ -33,6 +33,23 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      initContainers:
+        - name: volume-permission-fix
+          image: busybox:1.35
+          command: ["sh", "-c"]
+          args:
+            - |
+              echo "Setting permissions for mounted volumes..."
+              chmod -R 777 /mnt/results || true
+              mkdir -p /app/target && chmod -R 777 /app/target || true
+              echo "Permission setup completed"
+          volumeMounts:
+            {{- with .Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
       containers:
         - name: {{ .Chart.Name }}
           {{- with .Values.securityContext }}
@@ -48,16 +65,11 @@ spec:
               HOSTNAME=$(hostname)
               echo "Running tests with suite: $HOSTNAME"
               
-              # Prepare result directories
+              # Prepare result directories (permissions already set by init container)
               mkdir -p /mnt/results/.m2
               mkdir -p /mnt/results/$HOSTNAME
               
-              # Force clean target directory (remove problematic files)
-              echo "Cleaning target directory..."
-              rm -rf /app/target 2>/dev/null || true
-              [ -d "/app/target" ] && chmod -R 777 /app/target 2>/dev/null && rm -rf /app/target || true
-              
-              # Skip Maven clean since we already cleaned manually
+              # Compile and run tests (no need to clean since target has proper permissions)
               echo "Compiling and running tests..."
               mvn compile test \
                 -Dmaven.repo.local=/mnt/results/.m2 \
