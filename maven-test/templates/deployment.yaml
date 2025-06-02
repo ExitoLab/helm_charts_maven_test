@@ -48,52 +48,56 @@ spec:
               HOSTNAME=$(hostname)
               echo "Running tests with suite: $HOSTNAME"
               
-              # Prepare directories
+              # Prepare result directories
               mkdir -p /mnt/results/.m2
               mkdir -p /mnt/results/$HOSTNAME
-              mkdir -p /app/target/surefire-reports
               
-              # Set permissions to avoid clean issues
-              chmod -R 755 /app/target 2>/dev/null || true
-              
-              # Force clean target directory with multiple attempts
+              # Force clean target directory (remove problematic files)
+              echo "Cleaning target directory..."
               rm -rf /app/target 2>/dev/null || true
-              [ -d "/app/target" ] && chmod -R 777 /app/target 2>/dev/null || true
-              rm -rf /app/target 2>/dev/null || true
+              [ -d "/app/target" ] && chmod -R 777 /app/target 2>/dev/null && rm -rf /app/target || true
               
-              # Clean with error handling (should be fast now)
-              mvn clean -Dmaven.clean.failOnError=false \
-                -Dmaven.repo.local=/mnt/results/.m2 || true
-              
-              # Run tests
-              mvn test \
+              # Skip Maven clean since we already cleaned manually
+              echo "Compiling and running tests..."
+              mvn compile test \
                 -Dmaven.repo.local=/mnt/results/.m2 \
                 -DsuiteXmlFile=testng-automation/testng-simple.xml \
                 -Dsurefire.reportsDirectory=/mnt/results/$HOSTNAME
               
-              # Copy surefire reports to default location for report generation
-              if [ -d "/mnt/results/$HOSTNAME" ]; then
+              # Verify test results exist
+              if [ -d "/mnt/results/$HOSTNAME" ] && [ "$(ls -A /mnt/results/$HOSTNAME)" ]; then
+                echo "Test results found, generating HTML reports..."
+                
+                # Copy surefire reports to default location for report generation
+                mkdir -p /app/target/surefire-reports
                 cp -r /mnt/results/$HOSTNAME/* /app/target/surefire-reports/ 2>/dev/null || true
+                
+                # Generate HTML reports
+                mvn surefire-report:report-only \
+                  -Dmaven.repo.local=/mnt/results/.m2 \
+                  -DoutputDirectory=/mnt/results/$HOSTNAME 2>/dev/null || {
+                  echo "HTML report generation failed, but XML reports are available"
+                }
+                
+                # Copy any generated site reports
+                if [ -d "/app/target/site" ]; then
+                  cp -r /app/target/site/* /mnt/results/$HOSTNAME/ 2>/dev/null || true
+                fi
+              else
+                echo "No test results found in /mnt/results/$HOSTNAME"
               fi
               
-              # Generate HTML reports
-              mvn surefire-report:report-only \
-                -Dmaven.repo.local=/mnt/results/.m2 \
-                -DoutputDirectory=/mnt/results/$HOSTNAME || {
-                echo "Report generation failed, but tests may have succeeded"
-                echo "Check test results in /mnt/results/$HOSTNAME"
-              }
-              
-              # Copy any generated site reports
-              if [ -d "/app/target/site" ]; then
-                cp -r /app/target/site/* /mnt/results/$HOSTNAME/ 2>/dev/null || true
-              fi
-              
-              echo "Reports generated at /mnt/results/$HOSTNAME"
+              echo "Process completed. Results location: /mnt/results/$HOSTNAME"
               
               # List final results
               echo "Final results structure:"
-              ls -la /mnt/results/$HOSTNAME/ || echo "No results directory found"
+              ls -la /mnt/results/$HOSTNAME/ 2>/dev/null || echo "No results directory found"
+              
+              # Show test summary if available
+              if [ -f "/mnt/results/$HOSTNAME/TEST-*.xml" ]; then
+                echo "Test summary:"
+                grep -h "testsuite" /mnt/results/$HOSTNAME/TEST-*.xml | head -5 || true
+              fi
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
