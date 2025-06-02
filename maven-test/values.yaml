@@ -44,7 +44,10 @@ podLabels: {}
 podSecurityContext: {}
   # fsGroup: 2000
 
-securityContext: {}
+securityContext:
+  runAsUser: 10000
+  allowPrivilegeEscalation: false
+
   # capabilities:
   #   drop:
   #   - ALL
