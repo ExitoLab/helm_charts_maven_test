@@ -54,8 +54,6 @@ securityContext:
     drop:
       - ALL
   runAsNonRoot: true
-  seccompProfile:
-    type: RuntimeDefault
 
 
 # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
