@@ -56,9 +56,14 @@ spec:
               # Set permissions to avoid clean issues
               chmod -R 755 /app/target 2>/dev/null || true
               
-              # Clean with error handling
+              # Force clean target directory with multiple attempts
+              rm -rf /app/target 2>/dev/null || true
+              [ -d "/app/target" ] && chmod -R 777 /app/target 2>/dev/null || true
+              rm -rf /app/target 2>/dev/null || true
+              
+              # Clean with error handling (should be fast now)
               mvn clean -Dmaven.clean.failOnError=false \
-                -Dmaven.repo.local=/mnt/results/.m2
+                -Dmaven.repo.local=/mnt/results/.m2 || true
               
               # Run tests
               mvn test \
