@@ -127,4 +127,3 @@ pvc:
   enabled: true
   accessMode: ReadWriteOnce
   size: 30Gi
-  storageClassName: standard
