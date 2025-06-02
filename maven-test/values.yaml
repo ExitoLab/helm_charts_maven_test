@@ -41,18 +41,18 @@ podAnnotations: {}
 # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 podLabels: {}
 
-podSecurityContext: {}
-  # fsGroup: 2000
+podSecurityContext:
+  runAsUser: 10000
+  fsGroup: 10000
+  runAsNonRoot: true
 
 securityContext:
-  runAsUser: 10000
-  runAsNonRoot: true 
   allowPrivilegeEscalation: false
   capabilities:
     drop:
       - ALL
   seccompProfile:
-    type: RuntimeDefault  
+    type: RuntimeDefault
 
   # capabilities:
   #   drop:
