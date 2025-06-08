@@ -36,9 +36,6 @@ spec:
       initContainers:
         - name: volume-permission-fix
           image: busybox:1.35
-          securityContext:
-            runAsUser: 1000730000
-            runAsGroup: 1000730000
           command: ["sh", "-c"]
           args:
             - |
