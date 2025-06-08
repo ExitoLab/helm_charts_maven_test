@@ -38,8 +38,7 @@ pipeline {
                 sh """
                     helm upgrade --install $RELEASE_NAME $CHART_PATH \
                       --namespace $NAMESPACE \
-                      --values values.yaml \
-                      --create-namespace
+                      --values values.yaml 
                 """
             }
         }
